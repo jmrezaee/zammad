@@ -140,10 +140,12 @@ const formatToDisplay = (date: Date): string => {
 const parseFromDisplay = (value: string): Date => {
   if (isJalaliLocale.value && !timePicker.value) {
     const parts = value.split('/')
-    if (parts.length !== 3) return new Date('invalid')
+    if (parts.length !== 3) return new Date(NaN)
     const [jy, jm, jd] = parts.map(Number)
-    if (!jy || !jm || !jd) return new Date('invalid')
-    return jalaliToDate(jy, jm, jd)
+    if (!jy || !jm || !jd) return new Date(NaN)
+    const parsed = jalaliToDate(jy, jm, jd)
+    const back = dateToJalali(parsed)
+    return back.jy === jy && back.jm === jm && back.jd === jd ? parsed : new Date(NaN)
   }
   return parse(value, inputFormat.value, new Date())
 }
