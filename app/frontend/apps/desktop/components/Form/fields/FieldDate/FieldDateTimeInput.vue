@@ -10,17 +10,18 @@ import { computed, nextTick, toRef, watch, useTemplateRef } from 'vue'
 import { IMask, useIMask } from 'vue-imask'
 
 import useValue from '#shared/components/Form/composables/useValue.ts'
-import type { DateTimeContext } from '#shared/components/Form/fields/FieldDate/types.ts'
-import { useDateFnsLocale } from '#shared/components/Form/fields/FieldDate/useDateFnsLocale.ts'
-import { useDateTime } from '#shared/components/Form/fields/FieldDate/useDateTime.ts'
-import { usePickerModel } from '#shared/components/Form/fields/FieldDate/usePickerModel.ts'
 import {
   dateToJalali,
   jalaliToDate,
+  jalaliMonthLength,
   jalaliMonthName,
   JALALI_WEEKDAY_SHORT,
   toPersianDigits,
 } from '#shared/components/Form/fields/FieldDate/jalali.ts'
+import type { DateTimeContext } from '#shared/components/Form/fields/FieldDate/types.ts'
+import { useDateFnsLocale } from '#shared/components/Form/fields/FieldDate/useDateFnsLocale.ts'
+import { useDateTime } from '#shared/components/Form/fields/FieldDate/useDateTime.ts'
+import { usePickerModel } from '#shared/components/Form/fields/FieldDate/usePickerModel.ts'
 import { i18n } from '#shared/i18n.ts'
 import { useLocaleStore } from '#shared/stores/locale.ts'
 import testFlags from '#shared/utils/testFlags.ts'
@@ -85,7 +86,7 @@ const weekStart = computed(() => (isJalaliLocale.value ? WeekStart.Saturday : We
  * year/month/day).  Other locales use the locale-configured format.
  */
 const localeFormat = computed(() => {
-  if (isJalaliLocale.value && !timePicker.value) return 'yyyy/mm/dd'
+  if (isJalaliLocale.value && !timePicker.value) return 'yyyy/MM/dd'
   if (timePicker.value) return i18n.getDateTimeFormat()
   return i18n.getDateFormat()
 })
@@ -116,6 +117,10 @@ const inputFormat = computed(() =>
     .replace(/2DigitMinute/, 'mm')
     .replace(/l/, 'hh')
     .replace(/P/, 'aaa'),
+)
+
+const maskFormat = computed(() =>
+  isJalaliLocale.value && !timePicker.value ? 'yyyy/mm/dd' : localeFormat.value,
 )
 
 // ── Jalali ↔ display helpers ──────────────────────────────────────────────────
@@ -191,16 +196,18 @@ const getJalaliMonthYearLabel = (month: number, year: number): string => {
     return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)}`
   }
   // Two Jalali months visible — show both (earlier / later, Persian right-to-left)
-  const yearSuffix = jy1 !== jy2 ? ` ${toPersianDigits(jy2)}` : ''
-  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)}${yearSuffix} ${toPersianDigits(jy1)}`
+  if (jy1 !== jy2) {
+    return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy2)}`
+  }
+  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy1)}`
 }
 
 // ── IMask ─────────────────────────────────────────────────────────────────────
 
 const maskOptions = computed(() => ({
   mask: contextReactive.value.range
-    ? `${localeFormat.value} - ${localeFormat.value}`
-    : localeFormat.value,
+    ? `${maskFormat.value} - ${maskFormat.value}`
+    : maskFormat.value,
   blocks: {
     d: {
       mask: IMask.MaskedRange,
@@ -452,6 +459,7 @@ const closed = () => {
           <button
             type="button"
             class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+            :aria-label="ariaLabels.nextMonth"
             :disabled="isDisabled(true)"
             @click="navigateJalaliMonth(month, year, true, updateMonthYear)"
           >
@@ -463,6 +471,7 @@ const closed = () => {
           <button
             type="button"
             class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+            :aria-label="ariaLabels.prevMonth"
             :disabled="isDisabled(false)"
             @click="navigateJalaliMonth(month, year, false, updateMonthYear)"
           >

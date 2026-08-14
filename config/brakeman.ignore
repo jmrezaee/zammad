@@ -799,8 +799,8 @@
     },
     {
       "warning_type": "Unmaintained Dependency",
-      "warning_code": 120,
-      "fingerprint": "47bccab5947c865a68d97d48e5052b053b975b0f61513cc4bc8d72394ab01aae",
+      "warning_code": 122,
+      "fingerprint": "21ab0fe00fdd5899ffc405cff75aadb91b805ee996a614f7e27b08a287e9062d",
       "check_name": "EOLRails",
       "message": "Support for Rails 8.0.5 ends on 2026-10-07",
       "file": "Gemfile.lock",
@@ -817,5 +817,5 @@
       "note": "Rails 8.0.5 is the current version in use; EOL date noted"
     }
   ],
-  "brakeman_version": "8.0.4"
+  "brakeman_version": "8.0.5"
 }

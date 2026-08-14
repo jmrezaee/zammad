@@ -3,20 +3,22 @@
 <script setup lang="ts">
 import { VueDatePicker, WeekStart } from '@vuepic/vue-datepicker'
 import { useEventListener } from '@vueuse/core'
-import { computed, nextTick, ref, toRef } from 'vue'
+import { format, formatISO, isValid, parse, parseISO } from 'date-fns'
+import { computed, nextTick, ref, toRef, watch } from 'vue'
 
 import useValue from '#shared/components/Form/composables/useValue.ts'
-import type { DateTimeContext } from '#shared/components/Form/fields/FieldDate/types.ts'
-import { useDateFnsLocale } from '#shared/components/Form/fields/FieldDate/useDateFnsLocale.ts'
-import { useDateTime } from '#shared/components/Form/fields/FieldDate/useDateTime.ts'
-import { usePickerModel } from '#shared/components/Form/fields/FieldDate/usePickerModel.ts'
 import {
   dateToJalali,
+  jalaliMonthLength,
   jalaliToDate,
   jalaliMonthName,
   JALALI_WEEKDAY_SHORT,
   toPersianDigits,
 } from '#shared/components/Form/fields/FieldDate/jalali.ts'
+import type { DateTimeContext } from '#shared/components/Form/fields/FieldDate/types.ts'
+import { useDateFnsLocale } from '#shared/components/Form/fields/FieldDate/useDateFnsLocale.ts'
+import { useDateTime } from '#shared/components/Form/fields/FieldDate/useDateTime.ts'
+import { usePickerModel } from '#shared/components/Form/fields/FieldDate/usePickerModel.ts'
 import { i18n } from '#shared/i18n.ts'
 import { useLocaleStore } from '#shared/stores/locale.ts'
 import testFlags from '#shared/utils/testFlags.ts'
@@ -44,7 +46,42 @@ const { pickerModel } = usePickerModel(contextReactive, localValue)
 
 const localeStore = useLocaleStore()
 const isJalaliLocale = computed(() => localeStore.localeData?.locale === 'fa-ir')
+const isJalaliTextInput = computed(() => isJalaliLocale.value && !timePicker.value)
 const weekStart = computed(() => (isJalaliLocale.value ? WeekStart.Saturday : WeekStart.Monday))
+
+const parseValue = (value: string) => {
+  if (valueFormat.value === 'iso') return parseISO(value)
+  return parse(value, valueFormat.value, new Date())
+}
+
+const formatValue = (value: Date) => {
+  if (valueFormat.value === 'iso') return formatISO(value)
+  return format(value, valueFormat.value)
+}
+
+const formatToDisplay = (date: Date): string => {
+  const { jy, jm, jd } = dateToJalali(date)
+  return `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`
+}
+
+const parseFromDisplay = (value: string): Date => {
+  if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) return new Date('invalid')
+
+  const [jy, jm, jd] = value.split('/').map(Number)
+  if (
+    !Number.isInteger(jy) ||
+    !Number.isInteger(jm) ||
+    !Number.isInteger(jd) ||
+    jm < 1 ||
+    jm > 12 ||
+    jd < 1 ||
+    jd > jalaliMonthLength(jy, jm)
+  ) {
+    return new Date('invalid')
+  }
+
+  return jalaliToDate(jy, jm, jd)
+}
 
 const navigateJalaliMonth = (
   month: number,
@@ -76,8 +113,10 @@ const getJalaliMonthYearLabel = (month: number, year: number): string => {
   if (jm1 === jm2 && jy1 === jy2) {
     return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)}`
   }
-  const yearSuffix = jy1 !== jy2 ? ` ${toPersianDigits(jy2)}` : ''
-  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)}${yearSuffix} ${toPersianDigits(jy1)}`
+  if (jy1 !== jy2) {
+    return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy2)}`
+  }
+  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy1)}`
 }
 
 // ── Picker visibility ─────────────────────────────────────────────────────────
@@ -105,10 +144,106 @@ const actionRow = {
 
 const input = ref<HTMLInputElement>()
 const picker = ref()
+const jalaliInputValue = ref('')
 
 const showPicker = ref(false)
 
 const pickerDisplayStyle = computed(() => (showPicker.value ? 'block' : 'none'))
+
+const syncJalaliInputValue = () => {
+  if (!isJalaliTextInput.value) {
+    jalaliInputValue.value = ''
+    return
+  }
+
+  if (!localValue.value) {
+    jalaliInputValue.value = ''
+    return
+  }
+
+  if (Array.isArray(localValue.value)) {
+    const dates = localValue.value
+      .map((value) => (typeof value === 'string' ? parseValue(value) : new Date('invalid')))
+      .filter(isValid)
+
+    jalaliInputValue.value = dates.map(formatToDisplay).join(' - ')
+    return
+  }
+
+  const date = parseValue(localValue.value)
+  jalaliInputValue.value = isValid(date) ? formatToDisplay(date) : ''
+}
+
+watch([localValue, isJalaliTextInput], syncJalaliInputValue, { immediate: true })
+
+const handleJalaliInput = (event: Event) => {
+  const { value } = event.target as HTMLInputElement
+  jalaliInputValue.value = value
+
+  if (!value) {
+    localValue.value = null
+    return
+  }
+
+  if (props.context.range) {
+    const values = value.split(' - ').map((part) => {
+      const date = parseFromDisplay(part)
+      if (!isValid(date)) return
+      return formatValue(date)
+    })
+
+    if (values.length === 2 && values.every(Boolean)) {
+      localValue.value = values as string[]
+    }
+
+    return
+  }
+
+  const date = parseFromDisplay(value)
+  if (!isValid(date)) return
+
+  localValue.value = formatValue(date)
+}
+
+const handleInput = (event: Event, onInput: (event: Event | string) => void) => {
+  if (isJalaliTextInput.value) {
+    handleJalaliInput(event)
+    return
+  }
+
+  onInput(event)
+}
+
+const handlePaste = (event: ClipboardEvent, onPaste: (event: ClipboardEvent) => void) => {
+  if (isJalaliTextInput.value) return
+  onPaste(event)
+}
+
+const handleBlur = (event: FocusEvent, onBlur: (event: FocusEvent) => void) => {
+  if (isJalaliTextInput.value) {
+    syncJalaliInputValue()
+  }
+
+  onBlur(event)
+}
+
+const handleEnter = (event: KeyboardEvent, onEnter: (event: KeyboardEvent) => void) => {
+  if (isJalaliTextInput.value) {
+    syncJalaliInputValue()
+    return
+  }
+
+  onEnter(event)
+}
+
+const handleTab = (event: KeyboardEvent, onTab: (event: KeyboardEvent) => void) => {
+  if (isJalaliTextInput.value) {
+    syncJalaliInputValue()
+    return
+  }
+
+  onTab(event)
+}
 
 const expandPicker = () => {
   showPicker.value = true
@@ -195,6 +330,7 @@ useEventListener('click', (e) => {
           <button
             type="button"
             class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+            :aria-label="ariaLabels.nextMonth"
             :disabled="isDisabled(true)"
             @click="navigateJalaliMonth(month, year, true, updateMonthYear)"
           >
@@ -206,6 +342,7 @@ useEventListener('click', (e) => {
           <button
             type="button"
             class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+            :aria-label="ariaLabels.prevMonth"
             :disabled="isDisabled(false)"
             @click="navigateJalaliMonth(month, year, false, updateMonthYear)"
           >
@@ -248,19 +385,19 @@ useEventListener('click', (e) => {
         <input
           :id="context.id"
           ref="input"
-          :value="value"
+          :value="isJalaliTextInput ? jalaliInputValue : value"
           :name="context.node.name"
           :class="context.classes.input"
           :aria-describedby="context.describedBy"
           :disabled="context.disabled"
           type="text"
           v-bind="context.attrs"
-          @input="onInput"
-          @keydown.enter="onEnter"
-          @keydown.tab="onTab"
+          @input="handleInput($event, onInput)"
+          @keydown.enter="handleEnter($event, onEnter)"
+          @keydown.tab="handleTab($event, onTab)"
           @keydown="onKeypress"
-          @paste="onPaste"
-          @blur="onBlur"
+          @paste="handlePaste($event, onPaste)"
+          @blur="handleBlur($event, onBlur)"
           @focus="expandPicker"
         />
         <div v-if="showPicker" class="w-full" :class="{ 'pe-2': context.link }">
