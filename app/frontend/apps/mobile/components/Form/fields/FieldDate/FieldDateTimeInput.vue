@@ -76,8 +76,10 @@ const getJalaliMonthYearLabel = (month: number, year: number): string => {
   if (jm1 === jm2 && jy1 === jy2) {
     return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)}`
   }
-  const yearSuffix = jy1 !== jy2 ? ` ${toPersianDigits(jy2)}` : ''
-  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)}${yearSuffix} ${toPersianDigits(jy1)}`
+  if (jy1 !== jy2) {
+    return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy2)}`
+  }
+  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy1)}`
 }
 
 // ── Picker visibility ─────────────────────────────────────────────────────────
