@@ -345,6 +345,7 @@ useEventListener('click', (e) => {
           <button
             type="button"
             class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+            :aria-label="ariaLabels.prevMonth"
             :disabled="isDisabled(false)"
             @click="navigateJalaliMonth(month, year, false, updateMonthYear)"
           >

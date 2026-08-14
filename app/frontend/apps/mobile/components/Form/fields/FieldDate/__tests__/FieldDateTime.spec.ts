@@ -187,6 +187,22 @@ describe('Fields - FieldDate', () => {
       expect(input).toHaveDisplayValue(displayValue)
     })
 
+    it('renders Jalali month navigation buttons with accessible names in fa-ir', async () => {
+      const locale = useLocaleStore()
+      locale.localeData = { locale: 'fa-ir' } as any
+
+      const view = await renderDateField({
+        value: '2021-04-12',
+      })
+
+      const input = view.getByLabelText('Date')
+
+      await view.events.click(input)
+
+      expect(view.getByLabelText('Next month')).toBeInTheDocument()
+      expect(view.getByLabelText('Previous month')).toBeInTheDocument()
+    })
+
     it('allows to clear value', async () => {
       const view = await renderDateField({
         value: '2020-02-10',

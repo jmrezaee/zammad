@@ -10,10 +10,6 @@ import { computed, nextTick, toRef, watch, useTemplateRef } from 'vue'
 import { IMask, useIMask } from 'vue-imask'
 
 import useValue from '#shared/components/Form/composables/useValue.ts'
-import type { DateTimeContext } from '#shared/components/Form/fields/FieldDate/types.ts'
-import { useDateFnsLocale } from '#shared/components/Form/fields/FieldDate/useDateFnsLocale.ts'
-import { useDateTime } from '#shared/components/Form/fields/FieldDate/useDateTime.ts'
-import { usePickerModel } from '#shared/components/Form/fields/FieldDate/usePickerModel.ts'
 import {
   dateToJalali,
   jalaliToDate,
@@ -22,6 +18,10 @@ import {
   JALALI_WEEKDAY_SHORT,
   toPersianDigits,
 } from '#shared/components/Form/fields/FieldDate/jalali.ts'
+import type { DateTimeContext } from '#shared/components/Form/fields/FieldDate/types.ts'
+import { useDateFnsLocale } from '#shared/components/Form/fields/FieldDate/useDateFnsLocale.ts'
+import { useDateTime } from '#shared/components/Form/fields/FieldDate/useDateTime.ts'
+import { usePickerModel } from '#shared/components/Form/fields/FieldDate/usePickerModel.ts'
 import { i18n } from '#shared/i18n.ts'
 import { useLocaleStore } from '#shared/stores/locale.ts'
 import testFlags from '#shared/utils/testFlags.ts'
@@ -140,10 +140,24 @@ const formatToDisplay = (date: Date): string => {
  */
 const parseFromDisplay = (value: string): Date => {
   if (isJalaliLocale.value && !timePicker.value) {
+    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) return new Date('invalid')
+
     const parts = value.split('/')
     if (parts.length !== 3) return new Date('invalid')
+
     const [jy, jm, jd] = parts.map(Number)
-    if (!jy || !jm || !jd) return new Date('invalid')
+    if (
+      !Number.isInteger(jy) ||
+      !Number.isInteger(jm) ||
+      !Number.isInteger(jd) ||
+      jm < 1 ||
+      jm > 12 ||
+      jd < 1 ||
+      jd > jalaliMonthLength(jy, jm)
+    ) {
+      return new Date('invalid')
+    }
+
     return jalaliToDate(jy, jm, jd)
   }
   return parse(value, inputFormat.value, new Date())
@@ -465,6 +479,7 @@ const closed = () => {
           <button
             type="button"
             class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+            :aria-label="ariaLabels.prevMonth"
             :disabled="isDisabled(false)"
             @click="navigateJalaliMonth(month, year, false, updateMonthYear)"
           >
