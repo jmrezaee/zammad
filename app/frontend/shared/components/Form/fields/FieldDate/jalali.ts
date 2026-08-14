@@ -5,11 +5,11 @@
 // https://github.com/jalaali/jalaali-js
 
 function _div(a: number, b: number): number {
-  return ~~(a / b)
+  return Math.trunc(a / b)
 }
 
 function _mod(a: number, b: number): number {
-  return a - ~~(a / b) * b
+  return a - Math.trunc(a / b) * b
 }
 
 function jalCal(jy: number): { leap: number; gy: number; march: number } {
