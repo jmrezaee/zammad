@@ -28,7 +28,7 @@ RSpec.describe UserAgent, :aggregate_failures do
   end
 
   def start_server(with_ssl: nil)
-    @auto_shutdown_before_puma = Setting.get('auto_shutdown') # rubocop:disable RSpec/InstanceVariable
+    @auto_shutdown_before_puma = Setting.get('auto_shutdown')
     Setting.set('auto_shutdown', false)
 
     if with_ssl.present?
