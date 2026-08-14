@@ -102,8 +102,13 @@ export const updatePosition = (editor: Editor, element: HTMLElement) => {
       posToDOMRect(editor.view, editor.state.selection.from, editor.state.selection.to),
   }
 
+  // In RTL layouts floating-ui's 'bottom-start' aligns the popup's right edge
+  // with the cursor's right edge, which pushes it off-screen to the left.
+  // Use 'bottom-end' in RTL so the popup's left edge anchors to the cursor instead.
+  const isRTL = document.documentElement.dir === 'rtl'
+
   computePosition(virtualElement, element, {
-    placement: 'bottom-start',
+    placement: isRTL ? 'bottom-end' : 'bottom-start',
     strategy: 'fixed',
     middleware: [shift(), flip()],
   }).then(({ x, y, strategy }) => {
