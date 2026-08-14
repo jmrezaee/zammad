@@ -5,7 +5,9 @@ import { FormKit } from '@formkit/vue'
 import { renderComponent } from '#tests/support/components/index.ts'
 import { waitFor } from '#tests/support/vitest-wrapper.ts'
 
+import { dateToJalali } from '#shared/components/Form/fields/FieldDate/jalali.ts'
 import { i18n } from '#shared/i18n.ts'
+import { useLocaleStore } from '#shared/stores/locale.ts'
 
 const now = new Date('2021-04-13T11:10:00Z')
 
@@ -146,6 +148,43 @@ describe('Fields - FieldDate', () => {
       const input = view.getByLabelText('Date')
 
       expect(input).toHaveDisplayValue('2020-02-10')
+    })
+
+    it('formats the text input as Jalali in fa-ir', async () => {
+      const locale = useLocaleStore()
+      locale.localeData = { locale: 'fa-ir' } as any
+
+      const view = await renderDateField({
+        value: '2021-04-12',
+      })
+
+      const input = view.getByLabelText('Date')
+      const { jy, jm, jd } = dateToJalali(new Date(2021, 3, 12))
+
+      expect(input).toHaveDisplayValue(
+        `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`,
+      )
+    })
+
+    it('parses typed Jalali dates in fa-ir', async () => {
+      const locale = useLocaleStore()
+      locale.localeData = { locale: 'fa-ir' } as any
+
+      const view = await renderDateField()
+
+      const input = view.getByLabelText('Date')
+      const { jy, jm, jd } = dateToJalali(new Date(2021, 3, 12))
+      const displayValue = `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`
+
+      expect(input).toHaveDisplayValue('')
+
+      await view.events.type(input, displayValue)
+      await view.events.keyboard('{Enter}')
+
+      const emittedInput = view.emitted().inputRaw as Array<Array<InputEvent>>
+
+      expect(emittedInput.at(-1)?.at(0)).toBe('2021-04-12')
+      expect(input).toHaveDisplayValue(displayValue)
     })
 
     it('allows to clear value', async () => {
