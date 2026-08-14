@@ -67,10 +67,7 @@ const formatToDisplay = (date: Date): string => {
 const parseFromDisplay = (value: string): Date => {
   if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) return new Date('invalid')
 
-  const parts = value.split('/')
-  if (parts.length !== 3) return new Date('invalid')
-
-  const [jy, jm, jd] = parts.map(Number)
+  const [jy, jm, jd] = value.split('/').map(Number)
   if (
     !Number.isInteger(jy) ||
     !Number.isInteger(jm) ||

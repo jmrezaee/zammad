@@ -86,7 +86,7 @@ const weekStart = computed(() => (isJalaliLocale.value ? WeekStart.Saturday : We
  * year/month/day).  Other locales use the locale-configured format.
  */
 const localeFormat = computed(() => {
-  if (isJalaliLocale.value && !timePicker.value) return 'yyyy/mm/dd'
+  if (isJalaliLocale.value && !timePicker.value) return 'yyyy/MM/dd'
   if (timePicker.value) return i18n.getDateTimeFormat()
   return i18n.getDateFormat()
 })
@@ -119,6 +119,10 @@ const inputFormat = computed(() =>
     .replace(/P/, 'aaa'),
 )
 
+const maskFormat = computed(() =>
+  isJalaliLocale.value && !timePicker.value ? 'yyyy/mm/dd' : localeFormat.value,
+)
+
 // ── Jalali ↔ display helpers ──────────────────────────────────────────────────
 
 /**
@@ -142,10 +146,7 @@ const parseFromDisplay = (value: string): Date => {
   if (isJalaliLocale.value && !timePicker.value) {
     if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) return new Date('invalid')
 
-    const parts = value.split('/')
-    if (parts.length !== 3) return new Date('invalid')
-
-    const [jy, jm, jd] = parts.map(Number)
+    const [jy, jm, jd] = value.split('/').map(Number)
     if (
       !Number.isInteger(jy) ||
       !Number.isInteger(jm) ||
@@ -214,8 +215,8 @@ const getJalaliMonthYearLabel = (month: number, year: number): string => {
 
 const maskOptions = computed(() => ({
   mask: contextReactive.value.range
-    ? `${localeFormat.value} - ${localeFormat.value}`
-    : localeFormat.value,
+    ? `${maskFormat.value} - ${maskFormat.value}`
+    : maskFormat.value,
   blocks: {
     d: {
       mask: IMask.MaskedRange,

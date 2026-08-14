@@ -52,6 +52,10 @@ describe('jalaliMonthLength', () => {
   it('returns 29 for month 12 in a non-leap year', () => {
     expect(jalaliMonthLength(1405, 12)).toBe(29)
   })
+
+  it('returns 30 for month 12 in a leap year', () => {
+    expect(jalaliMonthLength(1403, 12)).toBe(30)
+  })
 })
 
 describe('jalaliMonthName', () => {

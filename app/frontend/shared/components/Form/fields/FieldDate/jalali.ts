@@ -72,8 +72,6 @@ function d2j(jdn: number): { jy: number; jm: number; jd: number } {
   const r = jalCal(jy)
   const jdn1f = g2d(gy, 3, r.march)
   let k = jdn - jdn1f
-  let jm: number
-  let jd: number
   if (k >= 0) {
     if (k <= 185) {
       return { jy, jm: 1 + _div(k, 31), jd: _mod(k, 31) + 1 }
@@ -84,8 +82,8 @@ function d2j(jdn: number): { jy: number; jm: number; jd: number } {
     k += 179
     if (jalCal(jy).leap === 1) k += 1
   }
-  jm = 7 + _div(k, 30)
-  jd = _mod(k, 30) + 1
+  const jm = 7 + _div(k, 30)
+  const jd = _mod(k, 30) + 1
   return { jy, jm, jd }
 }
 
