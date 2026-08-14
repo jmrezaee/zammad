@@ -144,22 +144,13 @@ const formatToDisplay = (date: Date): string => {
  */
 const parseFromDisplay = (value: string): Date => {
   if (isJalaliLocale.value && !timePicker.value) {
-    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) return new Date('invalid')
-
-    const [jy, jm, jd] = value.split('/').map(Number)
-    if (
-      !Number.isInteger(jy) ||
-      !Number.isInteger(jm) ||
-      !Number.isInteger(jd) ||
-      jm < 1 ||
-      jm > 12 ||
-      jd < 1 ||
-      jd > jalaliMonthLength(jy, jm)
-    ) {
-      return new Date('invalid')
-    }
-
-    return jalaliToDate(jy, jm, jd)
+    const parts = value.split('/')
+    if (parts.length !== 3) return new Date(NaN)
+    const [jy, jm, jd] = parts.map(Number)
+    if (!jy || !jm || !jd) return new Date(NaN)
+    const parsed = jalaliToDate(jy, jm, jd)
+    const back = dateToJalali(parsed)
+    return back.jy === jy && back.jm === jm && back.jd === jd ? parsed : new Date(NaN)
   }
   return parse(value, inputFormat.value, new Date())
 }
