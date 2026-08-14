@@ -190,8 +190,10 @@ const getJalaliMonthYearLabel = (month: number, year: number): string => {
     return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)}`
   }
   // Two Jalali months visible — show both (earlier / later, Persian right-to-left)
-  const yearSuffix = jy1 !== jy2 ? ` ${toPersianDigits(jy2)}` : ''
-  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)}${yearSuffix} ${toPersianDigits(jy1)}`
+  if (jy1 !== jy2) {
+    return `${jalaliMonthName(jm1)} ${toPersianDigits(jy1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy2)}`
+  }
+  return `${jalaliMonthName(jm1)} / ${jalaliMonthName(jm2)} ${toPersianDigits(jy1)}`
 }
 
 // ── IMask ─────────────────────────────────────────────────────────────────────
