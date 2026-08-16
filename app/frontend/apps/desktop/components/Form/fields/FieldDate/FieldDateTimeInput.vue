@@ -13,7 +13,6 @@ import useValue from '#shared/components/Form/composables/useValue.ts'
 import {
   dateToJalali,
   jalaliToDate,
-  jalaliMonthLength,
   jalaliMonthName,
   JALALI_WEEKDAY_SHORT,
   toPersianDigits,
@@ -454,58 +453,59 @@ const closed = () => {
 
       <!-- Jalali month/year header with Jalali-aware prev/next navigation.
            For non-Jalali locales the default VueDatePicker header is replicated
-           using the slot's months/years/handleMonthYearChange props. -->
-      <template
-        #month-year="{ month, year, months, updateMonthYear, handleMonthYearChange, isDisabled }"
-      >
-        <div v-if="isJalaliLocale" class="dp--month-year-wrap">
-          <button
-            type="button"
-            class="dp--btn dp--inner-nav dp--arrow-btn-nav"
-            :aria-label="ariaLabels.nextMonth"
-            :disabled="isDisabled(true)"
-            @click="navigateJalaliMonth(month, year, true, updateMonthYear)"
-          >
-            <CommonIcon name="chevron-left" size="xs" decorative />
-          </button>
-          <span class="dp--month-year-select font-medium">
-            {{ getJalaliMonthYearLabel(month, year) }}
-          </span>
-          <button
-            type="button"
-            class="dp--btn dp--inner-nav dp--arrow-btn-nav"
-            :aria-label="ariaLabels.prevMonth"
-            :disabled="isDisabled(false)"
-            @click="navigateJalaliMonth(month, year, false, updateMonthYear)"
-          >
-            <CommonIcon name="chevron-right" size="xs" decorative />
-          </button>
-        </div>
-        <!-- Non-Jalali: replicate VueDatePicker's default nav row -->
-        <div v-else class="dp--month-year-wrap">
-          <button
-            type="button"
-            class="dp--btn dp--inner-nav dp--arrow-btn-nav"
-            :disabled="isDisabled(false)"
-            @click="handleMonthYearChange(false)"
-          >
-            <CommonIcon name="chevron-left" size="xs" decorative />
-          </button>
-          <button type="button" class="dp--btn dp--month-year-select">
-            {{ months[month]?.text }}
-          </button>
-          <button type="button" class="dp--btn dp--year-select">
-            {{ year }}
-          </button>
-          <button
-            type="button"
-            class="dp--btn dp--inner-nav dp--arrow-btn-nav"
-            :disabled="isDisabled(true)"
-            @click="handleMonthYearChange(true)"
-          >
-            <CommonIcon name="chevron-right" size="xs" decorative />
-          </button>
-        </div>
+           using the slot's months/years/handleMonthYearChange props.
+           The mode === 'date' guard narrows the union type to DatePickerMonthYearSlotProps. -->
+      <template #month-year="rawProps">
+        <template v-if="rawProps.mode === 'date'">
+          <div v-if="isJalaliLocale" class="dp--month-year-wrap">
+            <button
+              type="button"
+              class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+              :aria-label="ariaLabels.nextMonth"
+              :disabled="rawProps.isDisabled(true)"
+              @click="navigateJalaliMonth(rawProps.month, rawProps.year, true, rawProps.updateMonthYear)"
+            >
+              <CommonIcon name="chevron-left" size="xs" decorative />
+            </button>
+            <span class="dp--month-year-select font-medium">
+              {{ getJalaliMonthYearLabel(rawProps.month, rawProps.year) }}
+            </span>
+            <button
+              type="button"
+              class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+              :aria-label="ariaLabels.prevMonth"
+              :disabled="rawProps.isDisabled(false)"
+              @click="navigateJalaliMonth(rawProps.month, rawProps.year, false, rawProps.updateMonthYear)"
+            >
+              <CommonIcon name="chevron-right" size="xs" decorative />
+            </button>
+          </div>
+          <!-- Non-Jalali: replicate VueDatePicker's default nav row -->
+          <div v-else class="dp--month-year-wrap">
+            <button
+              type="button"
+              class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+              :disabled="rawProps.isDisabled(false)"
+              @click="rawProps.handleMonthYearChange(false)"
+            >
+              <CommonIcon name="chevron-left" size="xs" decorative />
+            </button>
+            <button type="button" class="dp--btn dp--month-year-select">
+              {{ rawProps.months[rawProps.month]?.text }}
+            </button>
+            <button type="button" class="dp--btn dp--year-select">
+              {{ rawProps.year }}
+            </button>
+            <button
+              type="button"
+              class="dp--btn dp--inner-nav dp--arrow-btn-nav"
+              :disabled="rawProps.isDisabled(true)"
+              @click="rawProps.handleMonthYearChange(true)"
+            >
+              <CommonIcon name="chevron-right" size="xs" decorative />
+            </button>
+          </div>
+        </template>
       </template>
 
       <!-- Jalali day numbers in each calendar cell -->
