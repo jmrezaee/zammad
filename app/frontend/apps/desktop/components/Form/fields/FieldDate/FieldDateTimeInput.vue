@@ -179,7 +179,10 @@ const navigateJalaliMonth = (
     nextJm = 12
     nextJy--
   }
-  const targetDate = jalaliToDate(nextJy, nextJm, 1)
+  // Use day 15 so the target date always lands mid-month and is guaranteed
+  // to be in a different Gregorian month than day 1 (which can still fall in
+  // the current Gregorian month when the Jalali month boundary is late in it).
+  const targetDate = jalaliToDate(nextJy, nextJm, 15)
   updateMonthYear(targetDate.getMonth(), targetDate.getFullYear())
 }
 
