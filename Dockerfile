@@ -73,11 +73,7 @@ RUN if [ -z "${COMMIT_SHA}" ]; then \
   cat VERSION
 
 # Don't require Redis or Postgres (use fake DATABASE_URL to make Rails validation happy).
-# RUBYOPT disables Ruby 3.4's regex timeout so the terser gem doesn't time out
-# under QEMU emulation (which runs ~4x slower than native arm64 hardware).
-RUN echo 'Regexp.timeout = nil' > /tmp/no_regexp_timeout.rb && \
-    touch db/schema.rb && \
-    RUBYOPT="-r/tmp/no_regexp_timeout" \
+RUN touch db/schema.rb && \
     ZAMMAD_SAFE_MODE=1 DATABASE_URL=postgresql://zammad:/zammad bundle exec rake assets:precompile
 
 RUN script/build/cleanup.sh
