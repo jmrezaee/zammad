@@ -33,6 +33,14 @@ function _mod(a: number, b: number): number {
   return a - Math.trunc(a / b) * b
 }
 
+// Years where the official Iranian astronomical calendar (Taqvim-e Rasmi) places
+// Nowruz 1 day later than the algorithmic 2820-year cycle predicts. Add entries
+// as they are confirmed against the official calendar.
+const NOWRUZ_CORRECTION: Record<number, number> = {
+  1405: 1, // Nowruz 1405 = 21 March 2026; algorithm gives 20 March 2026
+  1406: 1, // Nowruz 1406 = 21 March 2027; algorithm gives 20 March 2027
+}
+
 function jalCal(jy: number): { leap: number; gy: number; march: number } {
   const breaks = [
     -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324,
@@ -49,7 +57,7 @@ function jalCal(jy: number): { leap: number; gy: number; march: number } {
       let n = jy - jp
       leapJ += _div(n, 33) * 8 + _div(_mod(n, 33), 4)
       const leapG = _div(gy, 4) - _div((_div(gy, 100) + 1) * 3, 4) - 150
-      const march = 20 + leapJ - leapG
+      const march = 20 + leapJ - leapG + (NOWRUZ_CORRECTION[jy] ?? 0)
       if (jump - n < 6) n = n - jump + _div(jump + 4, 33) * 33
       let leap = _mod(_mod(n + 1, 33) - 1, 4)
       if (leap === -1) leap = 4
