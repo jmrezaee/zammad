@@ -28,6 +28,11 @@
     --safe-bottom: env(safe-area-inset-bottom);
   }
 
+  html,
+  :host {
+    font-family: var(--font-sans);
+  }
+
   [type='text'],
   [type='password'],
   [type='email'],
