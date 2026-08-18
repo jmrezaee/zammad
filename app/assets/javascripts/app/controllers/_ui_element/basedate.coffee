@@ -38,6 +38,19 @@ class App.UiElement.basedate
   @toPersianDigits: (n) ->
     "#{n}".replace /[0-9]/g, (c) -> '۰۱۲۳۴۵۶۷۸۹'[parseInt(c)]
 
+  # Formats a Jalali date into the Bootstrap datepicker format string (e.g. 'dd.mm.yyyy').
+  # Tokens are replaced in longest-first order to avoid partial substitution bugs.
+  @formatJalaliDate: (jy, jm, jd, format) ->
+    pad2 = (n) -> if n < 10 then "0#{n}" else "#{n}"
+    p    = App.UiElement.basedate.toPersianDigits
+    format
+      .replace('yyyy', p(jy))
+      .replace('yy',   p(String(jy).slice(-2)))
+      .replace('mm',   p(pad2(jm)))
+      .replace('dd',   p(pad2(jd)))
+      .replace('m',    p(jm))
+      .replace('d',    p(jd))
+
   # Post-processes the rendered Bootstrap datepicker DOM to show Jalali day
   # numbers and a Jalali month/year header. Called after each calendar render.
   @patchJalaliCalendar: (item) ->
@@ -117,9 +130,22 @@ class App.UiElement.basedate
     )
 
     if isJalali
-      self = @
+      self   = @
+      format = App.i18n.timeFormat()['FORMAT_DATE'] or 'dd.mm.yyyy'
       item.find('.js-datepicker').on 'show changeDate changeMonth changeYear', ->
         setTimeout (-> self.patchJalaliCalendar(item)), 0
+      # After the datepicker (and its internal update) finishes, replace the
+      # Gregorian text in the visible input with the equivalent Jalali date.
+      item.find('.js-datepicker').on 'changeDate', ->
+        setTimeout ->
+          date = item.find('.js-datepicker').datepicker('getDate')
+          return unless date
+          gy = date.getFullYear()
+          gm = date.getMonth() + 1
+          gd = date.getDate()
+          { jy, jm, jd } = self.dateToJalali(gy, gm, gd)
+          item.find('.js-datepicker').val(self.formatJalaliDate(jy, jm, jd, format))
+        , 0
 
     @setNewTimeInitial(item, attribute)
 
