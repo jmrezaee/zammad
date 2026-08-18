@@ -1,5 +1,6 @@
 /* stylelint-disable import-notation */
 @import 'tailwindcss';
+@import '../../../shared/styles/fonts.css';
 @import './tokens.css';
 @import '../../../shared/styles/utilities.css';
 
