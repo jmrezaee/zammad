@@ -82,6 +82,14 @@ export const useLocaleStore = defineStore(
       document.documentElement.setAttribute('dir', newLocaleData.dir)
       document.documentElement.setAttribute('lang', newLocaleData.locale)
 
+      // Apply the locale-specific base font-family as an inline style so it
+      // takes precedence over Tailwind's compiled preflight font-family rule.
+      const persianFont =
+        "'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif"
+      const defaultFont = "'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif"
+      document.documentElement.style.fontFamily =
+        newLocaleData.locale === 'fa-ir' ? persianFont : defaultFont
+
       settingLocaleFor.value = undefined
     }
 

@@ -18,11 +18,6 @@
     interpolate-size: allow-keywords;
   }
 
-  html,
-  :host {
-    font-family: var(--font-sans);
-  }
-
   /* Override autofill styles in Firefox. */
   :-moz-autofill {
     background: transparent;
