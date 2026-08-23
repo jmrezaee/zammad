@@ -107,7 +107,11 @@
   --font-sans: 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
 }
 
-/* Persian locale uses IRANYekanX instead of the default typeface. */
-html[lang='fa-ir'] {
+/* Persian locale uses IRANYekanX instead of the default typeface.
+   Both the CSS variable and font-family are set: the variable covers
+   components that use var(--font-sans), while the direct font-family
+   wins over any @layer-based Tailwind preflight rule on the html element. */
+html[lang^='fa'] {
   --font-sans: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
+  font-family: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
 }
