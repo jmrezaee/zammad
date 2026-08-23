@@ -40,13 +40,18 @@
   --color-orange: #f39804;
 
   --font-sans: 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
+  /* Tailwind v4's preflight uses --default-font-family for the html element;
+     --font-sans alone is not picked up by the preflight. */
+  --default-font-family: 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
 }
 
 /* Persian locale uses IRANYekanX instead of the default typeface.
-   Both the CSS variable and font-family are set: the variable covers
-   components that use var(--font-sans), while the direct font-family
-   wins over any @layer-based Tailwind preflight rule on the html element. */
+   --font-sans covers components using var(--font-sans).
+   --default-font-family overrides the Tailwind v4 preflight variable.
+   font-family with !important wins over both the @layer base preflight
+   rule AND any inline style set by locale.ts (author !important > inline). */
 html[lang^='fa'] {
   --font-sans: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
-  font-family: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
+  --default-font-family: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
+  font-family: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif !important;
 }
