@@ -38,6 +38,7 @@
   }
 
   Plugin.prototype.init = function () {
+    this.renderBase()
     this.bindEvents()
   }
 
@@ -326,6 +327,12 @@
   // open widget
   Plugin.prototype.open = function() {
     this.active = true
+    // Remove any existing widget (init or previous close cycle) before creating
+    // a fresh one, so we never accumulate ghost siblings in the DOM.
+    if (this.$widget) {
+      this.$widget.off()
+      this.$widget.remove()
+    }
     // renderBase must come before updatePosition so movePosition() operates on
     // the freshly created (in-DOM) widget, not the old detached one.
     this.renderBase()
