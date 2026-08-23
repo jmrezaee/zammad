@@ -303,40 +303,44 @@
     this.$widget.css(css)
   }
 
-  // set position of widget
-  Plugin.prototype.updatePosition = function() {
-    this.$widget.find('.dropdown-menu').scrollTop(300)
+  // Measure the cursor position and store it in this._position / this._cursorHeight.
+  // Must be called while the browser selection is still intact — i.e. BEFORE any
+  // DOM insertions that can cause some browsers to drop the active selection.
+  Plugin.prototype.capturePosition = function() {
     if (!this.$element.is(':visible')) return
-
-    // Insert a marker at the cursor to measure its position. Use a zero-width
-    // space so the span inherits the line-height and has a measurable height.
-    var marker = '<span id="js-cursor-position">&#8203;</span>'
     var range = this.getFirstRange()
+    if (!range) return
+    var marker = '<span id="js-cursor-position">&#8203;</span>'
     var clone = range.cloneRange()
     clone.pasteHtml(marker)
     var $marker = $('#js-cursor-position')
-    this._position    = $marker.position()
+    this._position     = $marker.position()
     this._cursorHeight = $marker.outerHeight() || parseInt(this.$element.css('line-height')) || 20
     $marker.remove()
-    if (!this._position) return
+  }
 
-    // set position of widget
+  // set position of widget
+  Plugin.prototype.updatePosition = function() {
+    this.$widget.find('.dropdown-menu').scrollTop(300)
+    this.capturePosition()
+    if (!this._position) return
     this.movePosition()
   }
 
   // open widget
   Plugin.prototype.open = function() {
     this.active = true
-    // Remove any existing widget (init or previous close cycle) before creating
-    // a fresh one, so we never accumulate ghost siblings in the DOM.
+    // Capture cursor position BEFORE touching the DOM: inserting the widget
+    // element after $element can cause browsers to drop the text selection,
+    // making getFirstRange() return null and crashing updatePosition().
+    this.capturePosition()
     if (this.$widget) {
       this.$widget.off()
       this.$widget.remove()
     }
-    // renderBase must come before updatePosition so movePosition() operates on
-    // the freshly created (in-DOM) widget, not the old detached one.
     this.renderBase()
-    this.updatePosition()
+    // Apply the position we captured above to the freshly inserted widget.
+    this.movePosition()
     this.$widget.addClass('open')
     $(window).on('click.textmodule', $.proxy(this.close, this))
   }
