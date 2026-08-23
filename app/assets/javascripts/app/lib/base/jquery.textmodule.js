@@ -38,7 +38,6 @@
   }
 
   Plugin.prototype.init = function () {
-    this.renderBase()
     this.bindEvents()
   }
 
@@ -272,22 +271,24 @@
   Plugin.prototype.renderBase = function() {
     this.$element.after('<div class="shortcut dropdown dropdown--actions"><ul class="dropdown-menu text-modules-box"></ul></div>')
     this.$widget = this.$element.next()
+    // position: absolute is required so that top/left set by movePosition() are
+    // respected; the offset parent is the nearest positioned ancestor (.richtext).
+    this.$widget.css({ position: 'absolute', zIndex: 100 })
     this.$widget.on('mousedown', 'li', $.proxy(this.onEntryClick, this))
     this.$widget.on('mouseenter', 'li', $.proxy(this.onMouseEnter, this))
   }
 
-  // set height of widget
+  // set position of widget
   Plugin.prototype.movePosition = function() {
     if (!this._position) return
-    var height         = this.$element.outerHeight() + 2
-    var widgetHeight   = this.$widget.find('ul').height() //+ 60 // + height
     var rtl            = document.dir == 'rtl'
-    var top            = -( widgetHeight + height ) + this._position.top
+    // Place the dropdown just below the cursor line.
+    var top            = this._position.top + (this._cursorHeight || 20)
     var start          = this._position.left - 6
     var availableWidth = this.$element.innerWidth()
     var width          = this.$widget.find('.dropdown-menu').width()
 
-    if(rtl){
+    if (rtl) {
       start = availableWidth - start
     }
 
@@ -296,12 +297,8 @@
       start = availableWidth - width
     }
 
-    var css = {
-      top: top
-    }
-
+    var css = { top: top }
     css[rtl ? 'right' : 'left'] = start
-
     this.$widget.css(css)
   }
 
@@ -310,13 +307,16 @@
     this.$widget.find('.dropdown-menu').scrollTop(300)
     if (!this.$element.is(':visible')) return
 
-    // get cursor position
-    var marker = '<span id="js-cursor-position"></span>'
-    var range = this.getFirstRange();
+    // Insert a marker at the cursor to measure its position. Use a zero-width
+    // space so the span inherits the line-height and has a measurable height.
+    var marker = '<span id="js-cursor-position">&#8203;</span>'
+    var range = this.getFirstRange()
     var clone = range.cloneRange()
     clone.pasteHtml(marker)
-    this._position = $('#js-cursor-position').position()
-    $('#js-cursor-position').remove()
+    var $marker = $('#js-cursor-position')
+    this._position    = $marker.position()
+    this._cursorHeight = $marker.outerHeight() || parseInt(this.$element.css('line-height')) || 20
+    $marker.remove()
     if (!this._position) return
 
     // set position of widget
@@ -326,8 +326,10 @@
   // open widget
   Plugin.prototype.open = function() {
     this.active = true
-    this.updatePosition()
+    // renderBase must come before updatePosition so movePosition() operates on
+    // the freshly created (in-DOM) widget, not the old detached one.
     this.renderBase()
+    this.updatePosition()
     this.$widget.addClass('open')
     $(window).on('click.textmodule', $.proxy(this.close, this))
   }
