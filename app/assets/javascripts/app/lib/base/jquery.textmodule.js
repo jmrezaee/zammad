@@ -269,12 +269,14 @@
   }
 
   // create base template
+  // The widget is appended to document.body so it sits above all overflow:hidden
+  // ancestors in the editor layout and is never clipped.  position:fixed makes
+  // top/left relative to the viewport, matching the getBoundingClientRect()
+  // values stored by capturePosition().
   Plugin.prototype.renderBase = function() {
-    this.$element.after('<div class="shortcut dropdown dropdown--actions"><ul class="dropdown-menu text-modules-box"></ul></div>')
-    this.$widget = this.$element.next()
-    // position: absolute is required so that top/left set by movePosition() are
-    // respected; the offset parent is the nearest positioned ancestor (.richtext).
-    this.$widget.css({ position: 'absolute', zIndex: 100 })
+    this.$widget = $('<div class="shortcut dropdown dropdown--actions"><ul class="dropdown-menu text-modules-box"></ul></div>')
+    $('body').append(this.$widget)
+    this.$widget.css({ position: 'fixed', zIndex: 9999 })
     this.$widget.on('mousedown', 'li', $.proxy(this.onEntryClick, this))
     this.$widget.on('mouseenter', 'li', $.proxy(this.onMouseEnter, this))
   }
@@ -282,30 +284,25 @@
   // set position of widget
   Plugin.prototype.movePosition = function() {
     if (!this._position) return
-    var rtl            = document.dir == 'rtl'
-    // Place the dropdown just below the cursor line.
-    var top            = this._position.top + (this._cursorHeight || 20)
-    var start          = this._position.left - 6
-    var availableWidth = this.$element.innerWidth()
-    var width          = this.$widget.find('.dropdown-menu').width()
-
-    if (rtl) {
-      start = availableWidth - start
-    }
-
-    // position the element further left if it would break out of the textarea width
-    if (start + width > availableWidth) {
-      start = availableWidth - width
-    }
-
+    var rtl = document.dir == 'rtl'
+    var top = this._position.top + (this._cursorHeight || 20)
     var css = { top: top }
-    css[rtl ? 'right' : 'left'] = start
+    if (rtl) {
+      // Align the dropdown's right edge with the cursor x-position.
+      css.right = window.innerWidth - this._position.left
+      css.left  = 'auto'
+    } else {
+      css.left  = this._position.left - 6
+      css.right = 'auto'
+    }
     this.$widget.css(css)
   }
 
   // Measure the cursor position and store it in this._position / this._cursorHeight.
   // Must be called while the browser selection is still intact — i.e. BEFORE any
   // DOM insertions that can cause some browsers to drop the active selection.
+  // Uses getBoundingClientRect() so coordinates are viewport-relative, matching
+  // the position:fixed widget appended to body by renderBase().
   Plugin.prototype.capturePosition = function() {
     if (!this.$element.is(':visible')) return
     var range = this.getFirstRange()
@@ -313,10 +310,11 @@
     var marker = '<span id="js-cursor-position">&#8203;</span>'
     var clone = range.cloneRange()
     clone.pasteHtml(marker)
-    var $marker = $('#js-cursor-position')
-    this._position     = $marker.position()
-    this._cursorHeight = $marker.outerHeight() || parseInt(this.$element.css('line-height')) || 20
-    $marker.remove()
+    var markerEl = document.getElementById('js-cursor-position')
+    var rect = markerEl ? markerEl.getBoundingClientRect() : null
+    this._position     = rect ? { top: rect.top, left: rect.left } : null
+    this._cursorHeight = (markerEl ? markerEl.offsetHeight : 0) || parseInt(this.$element.css('line-height')) || 20
+    if (markerEl) $(markerEl).remove()
   }
 
   // set position of widget
