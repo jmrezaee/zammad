@@ -285,7 +285,16 @@
   Plugin.prototype.movePosition = function() {
     if (!this._position) return
     var rtl = document.dir == 'rtl'
-    var top = this._position.top + (this._cursorHeight || 20)
+    var cursorHeight = this._cursorHeight || 20
+    var cursorBottom = this._position.top + cursorHeight
+    var spaceBelow = window.innerHeight - cursorBottom
+    var dropdownHeight = Math.max(this.$widget.outerHeight() || 0, 60)
+    var top
+    if (spaceBelow < dropdownHeight && this._position.top > dropdownHeight) {
+      top = this._position.top - dropdownHeight
+    } else {
+      top = cursorBottom
+    }
     var css = { top: top }
     if (rtl) {
       // Align the dropdown's right edge with the cursor x-position.
