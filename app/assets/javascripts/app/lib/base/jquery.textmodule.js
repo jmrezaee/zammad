@@ -276,7 +276,9 @@
   Plugin.prototype.renderBase = function() {
     this.$widget = $('<div class="shortcut dropdown dropdown--actions"><ul class="dropdown-menu text-modules-box"></ul></div>')
     $('body').append(this.$widget)
-    this.$widget.css({ position: 'fixed', zIndex: 9999 })
+    // min-width prevents the Zammad "min-width: 100%" dropdown-menu rule from
+    // resolving to 0 when the fixed wrapper has no natural in-flow width.
+    this.$widget.css({ position: 'fixed', zIndex: 9999, minWidth: '200px' })
     this.$widget.on('mousedown', 'li', $.proxy(this.onEntryClick, this))
     this.$widget.on('mouseenter', 'li', $.proxy(this.onMouseEnter, this))
   }
@@ -284,7 +286,6 @@
   // set position of widget
   Plugin.prototype.movePosition = function() {
     if (!this._position) return
-    var rtl = document.dir == 'rtl'
     var cursorHeight = this._cursorHeight || 20
     var cursorBottom = this._position.top + cursorHeight
     var spaceBelow = window.innerHeight - cursorBottom
@@ -295,16 +296,12 @@
     } else {
       top = cursorBottom
     }
-    var css = { top: top }
-    if (rtl) {
-      // Align the dropdown's right edge with the cursor x-position.
-      css.right = window.innerWidth - this._position.left
-      css.left  = 'auto'
-    } else {
-      css.left  = this._position.left - 6
-      css.right = 'auto'
-    }
-    this.$widget.css(css)
+    // Always anchor via left so setting right never compresses the fixed wrapper
+    // to 0 width (which happens when left + right > viewportWidth).
+    // Clamp to keep the dropdown inside the viewport horizontally.
+    var minWidth  = this.$widget.outerWidth() || 200
+    var left = Math.min(Math.max(this._position.left - 6, 0), window.innerWidth - minWidth)
+    this.$widget.css({ top: top, left: left, right: 'auto' })
   }
 
   // Measure the cursor position and store it in this._position / this._cursorHeight.
