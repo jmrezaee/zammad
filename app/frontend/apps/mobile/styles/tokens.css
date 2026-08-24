@@ -48,9 +48,11 @@
 /* Persian locale uses IRANYekanX instead of the default typeface.
    --font-sans covers components using var(--font-sans).
    --default-font-family overrides the Tailwind v4 preflight variable.
-   font-family with !important wins over both the @layer base preflight
-   rule AND any inline style set by locale.ts (author !important > inline). */
-html[lang^='fa'] {
+   Both html and body are targeted because Tailwind's preflight emits a literal
+   "body, html { font-family: ... }" rule that ignores CSS variable changes;
+   without the body override, body would stay on Fira Sans. */
+html[lang^='fa'],
+html[lang^='fa'] body {
   --font-sans: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
   --default-font-family: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif;
   font-family: 'IRANYekanX', 'Fira Sans', 'Helvetica Neue', helvetica, arial, sans-serif !important;
